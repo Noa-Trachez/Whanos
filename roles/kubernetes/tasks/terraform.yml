@@ -1,0 +1,28 @@
+- name: Update apt repositories (for Ubuntu)
+  apt:
+    update_cache: yes
+
+- name: Install unzip (required for Terraform)
+  package:
+    name: unzip
+    state: present
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Download and install Terraform
+  get_url:
+    url: "https://releases.hashicorp.com/terraform/1.1.0/terraform_1.1.0_linux_amd64.zip"  # Change version accordingly
+    dest: /tmp/terraform.zip
+  register: download_result
+
+- name: Unzip Terraform
+  unarchive:
+    src: /tmp/terraform.zip
+    dest: /usr/local/bin/
+    remote_src: yes
+  when: download_result.changed
+
+- name: Set executable permissions
+  file:
+    path: /usr/local/bin/terraform
+    mode: '0755'
+  when: download_result.changed

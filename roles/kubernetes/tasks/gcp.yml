@@ -1,0 +1,40 @@
+---
+- name: Install required dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - lsb-release
+    - curl
+
+- name: Import the Google Cloud public key
+  apt_key:
+    url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+    id: "B53DC80D13EDEF05"
+    state: present
+
+- name: Setup GCP public key
+  shell: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+
+- name: Add the Cloud SDK distribution URI as a package source
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
+    state: present
+
+- name: Update apt packages
+  apt:
+    update_cache: yes
+
+- name: Install required dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - google-cloud-sdk
+    - google-cloud-sdk-gke-gcloud-auth-plugin
+
+- name: Add gcloud to the PATH
+  lineinfile:
+    dest: /etc/profile
+    line: 'export PATH=$PATH:/snap/bin/google-cloud-sdk/bin'
+    state: present

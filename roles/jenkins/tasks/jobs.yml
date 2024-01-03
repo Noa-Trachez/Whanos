@@ -1,0 +1,41 @@
+- name: Copy jobs folder to Jenkins jobs folder
+  copy:
+    src: "{{ item }}"
+    dest: "{{ jenkins_home }}/jobs/"
+    owner: jenkins
+    group: jenkins
+    mode: 0755
+  with_fileglob:
+    - "jobs/*"
+
+- name: Copy template of link-project job to Jenkins jobs folder
+  template:
+    src: link-project.groovy.j2
+    dest: "{{ jenkins_home }}/jobs/link-project.groovy"
+    owner: jenkins
+    group: jenkins
+    mode: 0755
+
+- name: Copy docker images to Jenkins jobs folder
+  copy:
+    src: "images/"
+    dest: "{{ jenkins_home }}/jobs/docker/images/"
+    owner: jenkins
+    group: jenkins
+    mode: 0755
+
+- name: Copy script detection to Jenkins docker folder
+  copy:
+    src: "detection.sh"
+    dest: "{{ jenkins_home }}/jobs/docker/"
+    owner: jenkins
+    group: jenkins
+    mode: 0755
+
+- name: Copy script create_pod to Jenkins kubernetes folder
+  copy:
+    src: "kubernetes_deployement/"
+    dest: "{{ jenkins_home }}/jobs/kubernetes/"
+    owner: jenkins
+    group: jenkins
+    mode: 0755

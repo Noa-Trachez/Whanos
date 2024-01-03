@@ -1,0 +1,60 @@
+# Define variables.
+- name: Define Docker service folder
+  set_fact:
+    docker_service_folder: "/etc/systemd/system/docker.service.d"
+  when: docker_service_folder is not defined
+
+- name: Define Docker service file
+  set_fact:
+    docker_service_file: "{{ docker_service_folder }}/override.conf"
+  when: docker_service_file is not defined
+
+
+# Create Docker service folder exists. Create if not exists.
+- name: Check if Docker service folder exists
+  stat:
+    path: "{{ docker_service_folder }}"
+  register: docker_service_folder_stat
+
+- name: Ensure Docker service folder exists
+  file:
+    path: "{{ docker_service_folder }}"
+    state: directory
+    mode: 0644
+  when: not docker_service_folder_stat.stat.exists
+
+
+# Create Docker service file exists. Create if not exists.
+- name: Check if Docker service file exists
+  stat:
+    path: "{{ docker_service_file }}"
+  register: docker_service_file_stat
+
+- name: Ensure Docker service file exists
+  file:
+    path: "{{ docker_service_file }}"
+    state: touch
+    mode: 0644
+  when: not docker_service_file_stat.stat.exists
+
+
+# Populate docker_service_file with service variables.
+- name: Populate Docker service file with service tag
+  copy:
+    dest: "{{ docker_service_file }}"
+    content: "[Service]\nExecStart=\n{{ docker_service_exec_start }}"
+  when: not docker_service_file_stat.stat.exists
+  register: docker_service_variables
+
+# Restart Docker service.
+- name: Restart Docker service
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: true
+  when: docker_service_variables.changed
+
+
+# Configure Docker service to start on boot.
+- name: Start Docker service and enable it on boot
+  service: name=docker state=started enabled=yes

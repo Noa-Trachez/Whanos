@@ -1,0 +1,79 @@
+- name: Allow SSH
+  ufw:
+    rule: allow
+    port: 22
+
+- name: Update package cache
+  apt:
+    update_cache: true
+
+- name: Upgrade all packages
+  apt:
+    upgrade: true
+
+- name: Create users
+  user:
+    name: "{{ item.name }}"
+    state: present
+    groups: sudo
+  with_items: "{{ ssh_users }}"
+  register: users
+
+- name: Copy SSH keys
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ lookup('file', item.ssh_key) }}"
+  with_items: "{{ ssh_users }}"
+  when: users is defined
+
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Disable password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PasswordAuthentication"
+    line: "PasswordAuthentication no"
+
+- name: Remove files in /etc/ssh/sshd_config.d/
+  shell: rm -f /etc/ssh/sshd_config.d/*
+
+- name: Change SSH port
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?Port"
+    line: "Port {{ ssh_port }}"
+
+- name: Enable public key authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PubkeyAuthentication"
+    line: "PubkeyAuthentication yes"
+
+- name: Disable root login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PermitRootLogin"
+    line: "PermitRootLogin no"
+
+- name: Restart SSH service
+  service:
+    name: ssh
+    state: restarted
+
+- name: Restart SSHD service
+  service:
+    name: sshd
+    state: restarted
+
+- name: Install Git
+  apt:
+    name: git
+    state: present
+
+
+- name: Set Bash as the default shell
+  command: chsh -s /bin/bash {{ item.name }}
+  with_items: "{{ ssh_users }}"

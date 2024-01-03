@@ -1,0 +1,57 @@
+# Make requests to Jenkins service and wait for it to start.
+- name: Wait for Jenkins service to start
+  uri:
+    url: "http://{{ jenkins_host }}:{{ jenkins_port }}/cli/"
+    method: GET
+    return_content: "yes"
+    timeout: 3
+    body_format: raw
+    follow_redirects: "no"
+    status_code: 200,403
+  register: response
+  until: (response.status == 403 or response.status == 200) and (response.content.find("Please wait while") == -1)
+  retries: 10
+  delay: 5
+  changed_when: false
+  check_mode: false
+
+
+# Get Jenkins password from file.
+- name: Get Jenkins password from file
+  slurp:
+    src: "/var/lib/jenkins/secrets/initialAdminPassword"
+  register: passwordFile
+  when: jenkins_admin_password is not defined
+
+- name: Set Jenkins password
+  set_fact:
+    password: "{{ passwordFile.content | b64decode | replace('\n', '') }}"
+  when: passwordFile.content is defined
+
+
+# Set password to environment variable if defined.
+- name: Set Jenkins password from environment variable
+  set_fact:
+    password: "{{ jenkins_admin_password }}"
+  when: jenkins_admin_password is defined
+
+
+# Install plugins.
+- name: Install Jenkins plugins (Search for updates)
+  jenkins_plugin:
+    name: "{{ item }}"
+    version: "latest"
+    jenkins_home: "{{ jenkins_home }}"
+    url_username: "admin"
+    url_password: "{{ password }}"
+    state: "present"
+    timeout: 60
+    updates_expiration: 86400
+    updates_url: "https://updates.jenkins.io"
+    url: "http://{{ jenkins_host }}:{{ jenkins_port }}"
+  when: password is defined
+  with_items: "{{ jenkins_plugins_variables }}"
+  register: response
+  until: response is success
+  retries: 2
+  delay: 1

@@ -1,0 +1,26 @@
+- name: Create Terraform directory
+  file:
+    path: "/terraform"
+    state: directory
+
+- name: Copy terraform script to vps with permission
+  copy:
+    src: "terraform/terraform_kubernetes.sh"
+    dest: "/terraform/terraform_kubernetes.sh"
+    mode: 0755
+  register: terraform_script
+
+- name: Copy Account.json to vps
+  copy:
+    src: "terraform/service_account.json"
+    dest: "/terraform/service_account.json"
+  register: terraform_account
+
+- name: Execute terraform
+  shell: |
+    cd /terraform
+    ./terraform_kubernetes.sh
+    cp -r /root/.kube /home/jenkins/.
+    chmod -R 755 /home/jenkins/.kube
+  when: terraform_script.changed or terraform_account.changed
+  register: terraform_execute

@@ -1,0 +1,22 @@
+FROM node:20.7.0-alpine
+
+RUN apk --no-cache add bash
+
+SHELL ["/bin/bash", "-c"]
+
+
+RUN npm install -g befunge
+
+
+RUN sed -i '/befunge.run();/a\  process.exit(0);' /usr/local/lib/node_modules/befunge/cli.js
+
+
+RUN sed -i 's/{ wsNoDestroy: true }/{ wsNoDestroy: true, rsNoDestroy: true }/' /usr/local/lib/node_modules/befunge/cli.js
+
+
+WORKDIR /app
+
+COPY . /app
+
+
+CMD ["befunge", "app/main.bf"]

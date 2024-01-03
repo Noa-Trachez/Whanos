@@ -1,0 +1,25 @@
+jenkins_java_opts: "-Djenkins.install.runSetupWizard=false"
+
+jenkins_service_variables:
+  - option: "JENKINS_HOME"
+    value: "{{ jenkins_home }}"
+  - option: "JENKINS_PORT"
+    value: "{{ jenkins_port }}"
+  - option: "JAVA_OPTS"
+    value: "{{ jenkins_java_opts }}"
+  - option: "USER_ADMIN_PASSWORD"
+    value: "{{ jenkins_admin_password }}"
+
+jenkins_plugins_variables: [
+  configuration-as-code,
+  git,
+  github,
+  job-dsl,
+  role-strategy,
+  docker-plugin,
+  docker-build-publish,
+  ws-cleanup,
+  parameterized-trigger,
+  conditional-buildstep,
+  multiple-scms,
+]

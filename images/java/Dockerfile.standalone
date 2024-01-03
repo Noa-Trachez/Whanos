@@ -1,0 +1,9 @@
+FROM maven:3.9
+
+WORKDIR /app
+
+COPY ./app .
+
+RUN mvn package
+
+CMD ["java", "-jar", "target/app.jar"]

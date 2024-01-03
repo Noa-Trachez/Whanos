@@ -1,0 +1,54 @@
+# Install required packages.
+- name: Install java
+  apt:
+    name: openjdk-17-jdk
+    state: present
+
+# Add Jenkins repo URL and key.
+- name: Define Jenkins repo URL
+  set_fact:
+    jenkins_repo_url: "deb https://pkg.jenkins.io/debian-stable binary/"
+  when: jenkins_repo_url is not defined
+
+- name: Define Jenkins repo key URL
+  set_fact:
+    jenkins_repo_key_url: "https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key"
+  when: jenkins_repo_key_url is not defined
+
+- name: Define Jenkins package URL
+  set_fact:
+    jenkins_pkg_url: "https://pkg.jenkins.io/debian/binary"
+  when: jenkins_pkg_url is not defined
+
+
+# Install Jenkins on Debian/Ubuntu.
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - apt-transport-https
+      - gnupg
+    state: present
+
+- name: Add Jenkins apt repository key
+  ansible.builtin.get_url:
+    url: "{{ jenkins_repo_key_url }}"
+    dest: /etc/apt/trusted.gpg.d/jenkins.asc
+    mode: '0644'
+    force: true
+
+- name: Add Jenkins apt repository
+  apt_repository:
+    repo: "{{ jenkins_repo_url }}"
+    state: present
+    update_cache: true
+  when: jenkins_repo_url is defined
+  tags: ['skip_ansible_lint']
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+
+# Create init groovy scripts
+- include_tasks: scripts.yml

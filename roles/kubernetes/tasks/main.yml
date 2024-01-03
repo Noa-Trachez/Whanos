@@ -1,0 +1,7 @@
+- include_tasks: terraform.yml
+
+- include_tasks: gcp.yml
+
+- include_tasks: kubectl.yml
+
+- include_tasks: execute_terraform.yml

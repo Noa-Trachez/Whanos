@@ -1,0 +1,54 @@
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Install Certbot
+  apt:
+    name: certbot
+    state: present
+  register: certbot_install
+
+- name: Ensure Webroot Directory Exists
+  file:
+    path: /var/www/html
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Obtain SSL/TLS Certificates
+  command: "certbot certonly --webroot -w /var/www/html -d {{ item }} --agree-tos --non-interactive --register-unsafely-without-email"
+  with_items: ["{{ jenkins_domain }}", "{{ registry_domain }}"]
+  when: certbot_install.changed
+
+- name: Create Nginx Configuration (Jenkins)
+  template:
+    src: nginx-reverse-proxy-jenkins.conf.j2
+    dest: "/etc/nginx/sites-available/{{ jenkins_domain }}"
+  register: nginx_config
+
+- name: Create Nginx Configuration (Docker-Registry)
+  template:
+    src: nginx-reverse-proxy-registry.conf.j2
+    dest: "/etc/nginx/sites-available/{{ registry_domain }}"
+  register: nginx_config
+
+- name: Enable Nginx Configuration
+  file:
+    src: "/etc/nginx/sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  with_items: ["{{ jenkins_domain }}", "{{ registry_domain }}"]
+  register: nginx_config
+
+- name: Verify Nginx Configuration
+  command: "nginx -t"
+  register: nginx_test_result
+  when: nginx_config.changed
+
+- name: Reload Nginx
+  systemd:
+    name: nginx
+    state: reloaded
+  when: nginx_config.changed and nginx_test_result.rc == 0

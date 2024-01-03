@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="hi"
+                 name="Epitech Whanos 2023"
+                 start-page="main.md">
+
+    <toc-element hidden="true" topic="find-gcp-files.md"/>
+    <toc-element hidden="true" topic="fix-http-error.md"/>
+    <toc-element topic="main.md"/>
+    <toc-element topic="usage.md"/>
+    <toc-element topic="ansible.md"/>
+    <toc-element topic="docker.md"/>
+    <toc-element topic="docker-registry.md" />
+    <toc-element topic="jenkins.md"/>
+    <toc-element topic="kubernetes.md"/>
+</instance-profile>

@@ -1,0 +1,76 @@
+freeStyleJob('/link-project') {
+    displayName('Link Project')
+    description('Link Project to Whanos infrastructure')
+    label('built-in')
+
+    parameters {
+        stringParam('PROJECT_NAME', null, 'Name of the project (must be [a-z][A-Z][0-9] only)')
+        stringParam('GITHUB_NAME', null, 'GitHub repository name (e.g., GithubUsername/RepositoryName)')
+        stringParam('GITHUB_BRANCH', null, 'GitHub branch name')
+        stringParam('CREDENTIAL_ID', null, 'Jenkins credential ID of the GitHub SSH key')
+        stringParam('REGISTRY_URL', "https://{{ registry_domain }}", 'Docker registry URL')
+    }
+
+    steps {
+        dsl {
+            text('''job ("/projects/$PROJECT_NAME") {
+                label('built-in')
+
+                wrappers {
+                    preBuildCleanup()
+                }
+                triggers {
+                    scm('*/1 * * * *')
+                }
+                ("$CREDENTIAL_ID" ?
+                scm {
+                    git {
+                        remote {
+                            github("$GITHUB_NAME", 'ssh')
+                            credentials("$CREDENTIAL_ID")
+                        }
+                        branch("$GITHUB_BRANCH")
+                    }
+                }
+                :
+                scm {
+                    git {
+                        remote {
+                            github("$GITHUB_NAME")
+                        }
+                        branch("$GITHUB_BRANCH")
+                    }
+                }
+                )
+                steps {
+                    shell("""#!/bin/sh
+                    ${JENKINS_HOME}/jobs/docker/detection.sh""".stripIndent())
+                    conditionalSteps {
+                        condition {
+                            fileExists('Dockerfile', BaseDir.WORKSPACE)
+                        }
+                        runner('Run')
+                        steps {
+                            dockerBuildAndPublish {
+                                repositoryName("$PROJECT_NAME")
+                                forcePull(false)
+                                noCache()
+                                dockerRegistryURL("$REGISTRY_URL")
+                            }
+                        }
+                    }
+                    conditionalSteps {
+                        condition {
+                            fileExists('whanos.yml', BaseDir.WORKSPACE)
+                        }
+                        runner('Run')
+                        steps {
+                            shell("""#!/bin/sh
+                            ${JENKINS_HOME}/jobs/kubernetes/create_server.sh $PROJECT_NAME $REGISTRY_URL/$PROJECT_NAME""".stripIndent())
+                        }
+                    }
+                }
+            }'''.stripIndent())
+        }
+    }
+}

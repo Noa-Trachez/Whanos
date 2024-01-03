@@ -1,0 +1,23 @@
+- name: Create init groovy script folder
+  file:
+      path: "{{ jenkins_home }}/init.groovy.d"
+      state: directory
+      owner: jenkins
+      group: jenkins
+      mode: 0775
+
+- name: Import Groovy script for basic security
+  template:
+    src: basic-security.groovy.j2
+    dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    owner: jenkins
+    group: jenkins
+    mode: 0775
+
+- name: Import Groovy script for disabling Job DSL script approval
+  template:
+      src: disable-script-approval.groovy.j2
+      dest: "{{ jenkins_home }}/init.groovy.d/disable-script-approval.groovy"
+      owner: jenkins
+      group: jenkins
+      mode: 0775

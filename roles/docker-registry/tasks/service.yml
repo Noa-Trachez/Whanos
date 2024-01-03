@@ -1,0 +1,20 @@
+# Copy Docker Registry service file
+- name: Create Docker Registry service file
+  copy:
+    src: docker-registry.service
+    dest: /etc/systemd/system/.
+  register: registry_service_file
+
+
+# Start Docker-Registry service.
+- name: Start Docker-Registry service
+  systemd:
+    name: docker-registry
+    state: started
+    daemon_reload: true
+  when: docker_file.changed or daemon_file.changed or registry_service_file.changed
+
+
+# Configure Docker-Registry service to start on boot.
+- name: Start Docker-Registry service and enable it on boot
+  service: name=docker-registry state=started enabled=yes

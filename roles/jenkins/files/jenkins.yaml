@@ -1,0 +1,48 @@
+jenkins:
+  systemMessage: "Welcome to Whanos Jenkins !"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: ${USER_ADMIN_PASSWORD}
+          name: "Administrator"
+
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            description: "Administrators"
+            permissions:
+              - "Overall/Administer"
+            entries:
+              - user: "admin"
+
+  clouds:
+    - docker:
+        name: "docker"
+        dockerApi:
+          dockerHost:
+            uri: "tcp://0.0.0.0:2376"
+        templates:
+          - labelString: "docker-agent"
+            dockerTemplateBase:
+              image: "jenkins/agent"
+              mounts:
+                - "type=tmpfs,destination=/run"
+                - "type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock"
+            remoteFs: "/home/jenkins/agent"
+            connector:
+              attach:
+                user: "jenkins"
+            instanceCapStr: "10"
+            retentionStrategy:
+              idleMinutes: 1
+
+
+# Register Jenkins jobs
+jobs:
+  - file: ${JENKINS_HOME}/jobs/docker.groovy
+  - file: ${JENKINS_HOME}/jobs/link-project.groovy
+  - file: ${JENKINS_HOME}/jobs/projects.groovy

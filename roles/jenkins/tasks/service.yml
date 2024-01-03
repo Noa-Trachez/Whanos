@@ -1,0 +1,83 @@
+# Define variables.
+- name: Define Jenkins service folder
+  set_fact:
+    jenkins_service_folder: "/etc/systemd/system/jenkins.service.d"
+  when: jenkins_service_folder is not defined
+
+- name: Define Jenkins service file
+  set_fact:
+    jenkins_service_file: "{{ jenkins_service_folder }}/override.conf"
+  when: jenkins_service_file is not defined
+
+
+# Create Jenkins service folder exists. Create if not exists.
+- name: Check if Jenkins service folder exists
+  stat:
+    path: "{{ jenkins_service_folder }}"
+  register: jenkins_service_folder_stat
+
+- name: Ensure Jenkins service folder exists
+  file:
+    path: "{{ jenkins_service_folder }}"
+    state: directory
+    mode: 0644
+  when: not jenkins_service_folder_stat.stat.exists
+
+
+# Create Jenkins service file exists. Create if not exists.
+- name: Check if Jenkins service file exists
+  stat:
+    path: "{{ jenkins_service_file }}"
+  register: jenkins_service_file_stat
+
+- name: Ensure Jenkins service file exists
+  file:
+    path: "{{ jenkins_service_file }}"
+    state: touch
+    mode: 0644
+  when: not jenkins_service_file_stat.stat.exists
+
+
+# Populate jenkins_service_file with service variables.
+- name: Populate Jenkins service file with service tag
+  copy:
+    dest: "{{ jenkins_service_file }}"
+    content: "[Service]"
+  when: not jenkins_service_file_stat.stat.exists
+
+- name: Populate Jenkins service file with right values
+  lineinfile:
+    dest: "{{ jenkins_service_file }}"
+    insertafter: '^Environment="{{ item.option }}='
+    regexp: '^Environment="{{ item.option }} '
+    line: 'Environment="{{ item.option }}={{ item.value }}"'
+    state: present
+    mode: 0644
+  with_items: "{{ jenkins_service_variables }}"
+  register: jenkins_service_variables
+  no_log: true
+
+
+# Create Jenkins home folder exists. Create if not exists.
+- name: Create Jenkins home
+  file:
+    path: "{{ jenkins_home }}"
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: u+rwx
+    follow: true
+
+
+# Restart Jenkins service.
+- name: Restart Jenkins service
+  systemd:
+    name: jenkins
+    state: restarted
+    daemon_reload: true
+  when: jenkins_service_variables.changed
+
+
+# Configure Jenkins service to start on boot.
+- name: Start Jenkins service and enable it on boot
+  service: name=jenkins state=started enabled=yes

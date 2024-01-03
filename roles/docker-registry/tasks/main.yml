@@ -1,0 +1,29 @@
+# Create Docker Volumes
+- name: Create Docker Volumes
+  file:
+    path: /opt/my_docker
+    state: directory
+
+- name: Create Registry Volumes
+  file:
+    path: /opt/my_docker/docker-registry
+    state: directory
+
+
+# Copy Docker Compose File
+- name: Copy Docker Compose File
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/my_docker/docker-compose.yml
+  register: docker_file
+
+
+# Copy Docker Registry daemon configuration file
+- name: Ensure Docker Registry daemon configuration file is present
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+  register: daemon_file
+
+
+- include_tasks: service.yml

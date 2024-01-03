@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  registry:
+    restart: always
+    image: registry:2.7.0
+    container_name: my-docker-registry
+    ports:
+      - {{ docker_registry_port }}:5000
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+    volumes:
+      - /opt/my_docker/docker-registry/:/var/lib/registry

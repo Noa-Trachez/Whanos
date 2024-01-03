@@ -1,0 +1,12 @@
+- name: Setup VPS
+  hosts: vps_servers
+
+  become: true
+  roles:
+    - nginx
+    - docker
+    - docker-registry
+    - jenkins
+    - kubernetes
+  vars_files:
+    - vars/default.yml

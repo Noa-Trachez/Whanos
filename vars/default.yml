@@ -1,0 +1,9 @@
+jenkins_admin_password: ""
+jenkins_home: "/var/lib/jenkins"
+jenkins_host: "localhost"
+jenkins_port: "8084"
+
+docker_registry_port: "8081"
+
+jenkins_domain: ""
+registry_domain: ""
